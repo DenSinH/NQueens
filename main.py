@@ -34,7 +34,6 @@ def r2(q):
 
 def rot_mir_queens(queens):
     # symmetries of the chess board
-
     for mirror in (mir, lambda q: q):
         for rot1 in (r1, lambda q: q):
             for rot2 in (r2, lambda q: q):
@@ -73,12 +72,8 @@ def place_queens(queens=None, board=None, n=8):
             board[x + np.arange(max(-x, queens[x] - n + 1), min(n - 1 - x, queens[x])),
                   queens[x] - np.arange(max(-x, queens[x] - n + 1), min(n - 1 - x, queens[x]))] = 0.
 
-    # if a board was passed, and we cannot place any queens on it, report the configuration
-    elif np.all(board == np.zeros(board.shape)):
-        return [queens]
-
     # building it up from the bottom
-    # only checking x-coords where a queen can be placed
+    # only checking x-coords where a queen can be placed on this row
     y = queens[queens >= 0.].size
     nzx = np.nonzero(board[:, y])[0]
 
@@ -94,10 +89,29 @@ def place_queens(queens=None, board=None, n=8):
 
         # check if we have already had (a symmetry) of this configuration
         # if so, the queens_ variable will be a key in results_for_queens
-        for config in rot_mir_queens(queens_):
+        """ 
+        we only need to check for symmetry if y > 3, since we cannot put 3 queens on a 3 x 3 grid without them being
+        able to hit eachother. Any symmetry that we have already seen for y <= 3 would have to have the queens placed
+        in such a way (you can see this by looking at where the first 3 rows go (taking into account that only
+        the first half of the first row is used.
+        
+        We also needn't check for symmetries if the queens are spread out more in the x-direction than in the y-
+        direction. This is because again, we cannot have seen a symmetry of this before, as for all of them, the 
+        maximum y-coordinate would be higher than that of any we have seen before.
+        """
+        queen_xs = np.nonzero(queens >= 0.)[0]
+        for config in rot_mir_queens(queens_) if (y > 3 and queen_xs.max() - queen_xs.min() <= y) else []:
             if config.tostring() in calculated_configs:
                 break
         else:
+
+            # if no more queens can be placed, we can stop with the recursion
+            # no more queens can be placed if we are on the top row (y = n - 1)
+            # we only report the config if we placed n queens (which is only possible if we got this far)
+            if y == n - 1:
+                possible_configs.extend([queens_])
+                calculated_configs[queens_.tostring()] = 1.
+                continue
 
             # otherwise, create a new board, and find the possible configurations
             board_ = np.array(board)
@@ -116,10 +130,11 @@ def place_queens(queens=None, board=None, n=8):
                    y - downward_diagonal] = 0.
 
             # amount of places a queen may be placed
-            nonzero = board_[board_ == 1.].size
+            nonzero_x = np.nonzero(np.sum(board_, axis=0))[0].size
+            nonzero_y = np.nonzero(np.sum(board_, axis=1))[0].size
 
             # we only wish to find configurations with n queens, so if we cannot get n queens on the board, we can skip
-            if nonzero + queens_[queens_ >= 0].size >= n:
+            if nonzero_x + queens_[queens_ >= 0].size >= n and nonzero_y + queens_[queens_ >= 0].size >= n:
 
                 # otherwise, create a new recursion
                 configs = place_queens(queens_, board=board_, n=n)
@@ -130,23 +145,25 @@ def place_queens(queens=None, board=None, n=8):
 
     return possible_configs
 
+
 if __name__ == "__main__":
-  """Maximum length was N"""
-  N = 8
+    N = 10
 
-  t0 = time.time()
-  tot = []
-  unique = 0
+    t0 = time.time()
+    tot = []
+    unique = 0
 
-  for config in place_queens(n=N):
-      unique += 1
-      tot += set([str(config_) for config_ in rot_mir_queens(config)])
+    for config in place_queens(n=N):
+        unique += 1
+        tot += set([str(config_) for config_ in rot_mir_queens(config)])
 
-  comptime = time.time() - t0
+    comptime = time.time() - t0
 
-  for q in tot:
-      print q
+    for q in tot:
+        print q
 
-  print len(tot), "total solutions"
-  print unique, "unique solutions"
-  print comptime, "seconds of computing time"
+    print len(calculated_configs), "configurations checked"
+
+    print len(tot), "total solutions found"
+    print unique, "unique solutions found"
+    print comptime, "seconds of computing time"
