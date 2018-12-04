@@ -32,7 +32,7 @@ def r2(q):
     return q_
 
 
-def rot_mir_queens(queens, n=8):
+def rot_mir_queens(queens):
     # symmetries of the chess board
 
     for mirror in (mir, lambda q: q):
@@ -94,7 +94,7 @@ def place_queens(queens=None, board=None, n=8):
 
         # check if we have already had (a symmetry) of this configuration
         # if so, the queens_ variable will be a key in results_for_queens
-        for config in rot_mir_queens(queens_, n=n):
+        for config in rot_mir_queens(queens_):
             if config.tostring() in calculated_configs:
                 break
         else:
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
   for config in place_queens(n=N):
       unique += 1
-      tot += set([str(config_) for config_ in rot_mir_queens(config, N)])
+      tot += set([str(config_) for config_ in rot_mir_queens(config)])
 
   comptime = time.time() - t0
 
