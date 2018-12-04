@@ -99,7 +99,7 @@ def place_queens(queens=None, board=None, n=8):
         direction. This is because again, we cannot have seen a symmetry of this before, as for all of them, the 
         maximum y-coordinate would be higher than that of any we have seen before.
         """
-        queen_xs = np.nonzero(queens >= 0.)[0]
+        queen_xs = np.nonzero(queens_ >= 0.)[0]
         for config in rot_mir_queens(queens_) if (y > 3 and queen_xs.max() - queen_xs.min() <= y) else []:
             if config.tostring() in calculated_configs:
                 break
